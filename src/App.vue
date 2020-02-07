@@ -1,8 +1,23 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  </div>
+  <b-container>
+    <b-navbar toggleable="lg" variant="dark" type="dark">
+      <b-navbar-brand to="/">
+        Listener
+      </b-navbar-brand>
+      <b-navbar-toggle target="nav-collapse" />
+        <b-collapse id="nav-collapse" is-nav>
+          <b-navbar-nav>
+            <b-nav-item to="/recent">
+              Recent
+            </b-nav-item>
+            <b-nav-item to="/spectrogram">
+              Spectrogram
+            </b-nav-item>
+          </b-navbar-nav>
+        </b-collapse>
+    </b-navbar>
+    <router-view />
+  </b-container>
 </template>
 
 <script lang="ts">
