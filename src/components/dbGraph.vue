@@ -2,7 +2,7 @@
 import Vue from 'vue';
 import { Bar, mixins } from 'vue-chartjs';
 
-export default {
+export default Vue.extend({
   extends: Bar,
   mixins: [mixins.reactiveProp],
   props: {
@@ -19,5 +19,5 @@ export default {
     // Overwriting base render method with actual data.
     this.renderChart(this.chartData, this.options);
   },
-};
+});
 </script>
