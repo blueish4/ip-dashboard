@@ -14,7 +14,7 @@ function getRatioPoint(value: number): number {
   return value / 65535;
 }
 
-function genCell(value: number, lower: number, upper: number): string {
+function genCell(value: number, lower: number, upper: number): number[] {
   const intensity = getRatioPoint(value);
 
   function getChannelValue(channel: number) {
@@ -22,7 +22,7 @@ function genCell(value: number, lower: number, upper: number): string {
     const mask = 0xff << chanSelect;
     const range = (upper & mask) - (lower & mask);
 
-    return (((range >> chanSelect) * value * intensity) << chanSelect) & mask;
+    return ((((range >> chanSelect) * value * intensity) << chanSelect) & mask) >> chanSelect;
   }
   // Generate a gradient colour between the optional lower and upper
   // Split into R, G, and B channels and process individually
@@ -30,37 +30,49 @@ function genCell(value: number, lower: number, upper: number): string {
   const R:number = getChannelValue(2);
   const G:number = getChannelValue(1);
   const B:number = getChannelValue(0);
-  const color = R | G | B;
-  return color.toString(16);
+  return [R, G, B, 255]; // Constant full alpha value
 }
 
-function genColumn(values: number[]): string[] {
-  const colors: string[] = [];
+function genColumn(values: number[], lower: number, upper: number): number[][] {
+  console.log(values);
+  const colors: number[][] = [];
   values.forEach((e) => {
-    colors.push(genCell(e, 0x000000, 0xFFFFFF));
+    colors.push(genCell(e, lower, upper));
   });
   return colors;
 }
 
-function drawColumn(ctx: CanvasRenderingContext2D, colors: string[]) {
+function drawColumn(ctx: CanvasRenderingContext2D, colors: number[][]) {
+  const imageData = ctx.createImageData(1, colors.length);
+  let i = 0;
+  colors.reverse().forEach((element) => {
+    imageData.data[i + 0] = element[0]; // eslint-disable-line prefer-destructuring
+    imageData.data[i + 1] = element[1]; // eslint-disable-line prefer-destructuring
+    imageData.data[i + 2] = element[2]; // eslint-disable-line prefer-destructuring
+    imageData.data[i + 3] = element[3]; // eslint-disable-line prefer-destructuring
+    i += 4;
+  });
+  ctx.putImageData(imageData, 0, 0);
+}
 
+function prerenderColumn(colors: number[][]) {
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.height = colors.length;
+  offscreenCanvas.width = 1;
+  const offscreenCtx = offscreenCanvas.getContext('2d') as CanvasRenderingContext2D;
+  drawColumn(offscreenCtx, colors);
+  return offscreenCanvas;
 }
 
 export default Vue.extend({
-  data() {
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-    return {
-      canvas,
-      context,
-    };
-  },
   async mounted() {
     const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
     const spectralData = await data.json();
-    console.log(genCell(30000, 0, 0xffffff));
-    const colors = genColumn(spectralData.spectra);
-    drawColumn(this.context, colors);
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+    context.scale(10, 10); // TODO: these values are constant
+    const colors = genColumn(spectralData.spectra, 0, 0xff0000);
+    context.drawImage(prerenderColumn(colors), 0, 0);
   },
 });
 </script>
