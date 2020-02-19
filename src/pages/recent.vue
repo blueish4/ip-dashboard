@@ -21,7 +21,7 @@ export default Vue.extend({
   },
   data: () => ({
     loaded: false,
-    chartData: null,
+    chartData: {},
     options: {
       maintainAspectRatio: false,
     },
