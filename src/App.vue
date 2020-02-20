@@ -16,18 +16,40 @@
           </b-navbar-nav>
         </b-collapse>
     </b-navbar>
-    <router-view />
+    <div v-if="loaded">
+      <router-view/>
+    </div>
   </b-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 
-@Component({
-  components: {
-  },
-})
-export default class App extends Vue {}
+@Component
+export default class App extends Vue {
+  mounted() {
+    this.getMoreData();
+  }
+
+  loaded() {
+    return this.$store && this.$store.getters.lastEntries.length > 0;
+  }
+
+  async getMoreData(): Promise<void> {
+    const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
+    const spectralData = await data.json();
+    this.$store.commit('importNewData', spectralData);
+    window.setInterval(async () => {
+      await this.fetchUpdate();
+    }, 5000);
+  }
+
+  async fetchUpdate() {
+    const res = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
+    const json = await res.json();
+    this.$store.commit('importNewData', json);
+  }
+}
 </script>
 
 <style>
