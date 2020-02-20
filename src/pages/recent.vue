@@ -32,14 +32,14 @@ export default Vue.extend({
     const json = await res.json();
 
     // eslint-disable-next-line dot-notation
-    const timestamp = json.timestamp['_seconds'] * 1000;
+    const timestamp = json[0].timestamp['_seconds'] * 1000;
     this.date = new Date(timestamp);
 
     this.chartData = {
       labels: ['63', '125', '250', '500', '1000', '2000', '4000', '8000'],
       datasets: [
         {
-          data: json.spectra,
+          data: json[0].spectra,
           label: 'spectra',
         },
       ],
