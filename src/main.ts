@@ -22,6 +22,7 @@ const routes = [
 const store = new Vuex.Store({
   state: {
     records: [] as any[],
+    recordLength: 25,
   },
   getters: {
     lastEntries(state) {
@@ -32,10 +33,13 @@ const store = new Vuex.Store({
     importNewData(state, record: any) {
       const docids = state.records.map(e => e.documentId);
       record.reverse().forEach((element: any) => {
-        if (!(element.documentId in docids)) {
+        if (!docids.includes(element.documentId)) {
           state.records.push(element);
         }
       });
+      while (state.records.length > state.recordLength) {
+        state.records.shift();
+      }
     },
   },
 });
