@@ -1,5 +1,5 @@
 <template>
-  <div class="parent">
+  <div class="parent" @resize="resize" v-if="loaded">
     <canvas id="canvas">
       <p>A canvas showing the previous history</p>
     </canvas>
@@ -11,27 +11,20 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 
-function getRatioPoint(value: number): number {
-  return value / 65535;
-}
-
 function genCell(value: number, lower: number, upper: number): number[] {
-  const intensity = getRatioPoint(value);
+  const intensity = value / 65535;
 
-  function getChannelValue(channel: number) {
+  const channels = [];
+  for (let channel = 2; channel >= 0; channel -= 1) {
     const chanSelect = 8 * channel; // 8 bits per channel
     const mask = 0xff << chanSelect;
     const range = (upper & mask) - (lower & mask);
 
-    return ((((range >> chanSelect) * value * intensity) << chanSelect) & mask) >> chanSelect;
+    const chanValue = ((range >> chanSelect) * value * intensity) & 0xff;
+    channels.push(chanValue);
   }
-  // Generate a gradient colour between the optional lower and upper
-  // Split into R, G, and B channels and process individually
-  // TODO: Convert to a loop, can probably be done
-  const R:number = getChannelValue(2);
-  const G:number = getChannelValue(1);
-  const B:number = getChannelValue(0);
-  return [R, G, B, 255]; // Constant full alpha value
+  channels.push(255); // full alpha channel
+  return channels;
 }
 
 function genColumn(values: number[], lower: number, upper: number): number[][] {
@@ -65,23 +58,40 @@ function prerenderColumn(colors: number[][]) {
 }
 
 export default Vue.extend({
+  data() {
+    return {
+      loaded: false,
+    };
+  },
   async mounted() {
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-    context.scale(10, 10); // TODO: these values are constant
-    let counter = 0;
-    (await this.getMoreData()).reverse().forEach((point: {spectra: number[]}) => {
-      const colors = genColumn(point.spectra, 0, 0xff0000);
-      context.drawImage(prerenderColumn(colors), counter, 0);
-      counter += 1;
-    });
+    await this.getMoreData();
+    this.resize();
   },
   methods: {
-    async getMoreData(): Promise<[{spectra: number[]}]> {
+    async getMoreData(): Promise<void> {
       const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
       const spectralData = await data.json();
       this.$store.commit('importNewData', spectralData);
-      return spectralData;
+      this.loaded = true;
+    },
+    resize() {
+      const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+      canvas.width = (canvas.parentElement as HTMLElement).offsetWidth;
+      this.redraw();
+    },
+    redraw() {
+      debugger;
+      const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+      const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+      const plottable = this.$store.getters.lastEntries;
+
+      context.scale(canvas.width / plottable.length, canvas.height / 8);
+      let counter = 0;
+      plottable.forEach((point: {spectra: number[]}) => {
+        const colors = genColumn(point.spectra, 0, 0xff0000);
+        context.drawImage(prerenderColumn(colors), counter, 0);
+        counter += 1;
+      });
     },
   },
 });

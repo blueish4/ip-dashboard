@@ -23,6 +23,11 @@ const store = new Vuex.Store({
   state: {
     records: [] as any[],
   },
+  getters: {
+    lastEntries(state) {
+      return state.records.reverse();
+    },
+  },
   mutations: {
     importNewData(state, record: any) {
       state.records = state.records.concat(record);
