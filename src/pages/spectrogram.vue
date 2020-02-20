@@ -120,14 +120,17 @@ export default Vue.extend({
               display: true,
             },
           }],
+          yAxes: [{
+            type: 'linear',
+            scaleLabel: {
+              labelString: 'Loudness (dBA)',
+              display: true,
+            },
+            ticks: {
+              min: 30,
+            },
+          }],
         },
-        yAxes: [{
-          type: 'logarithmic',
-          scaleLabel: {
-            labelString: 'Loudness (dBA)',
-            display: true,
-          },
-        }],
       },
     };
   },

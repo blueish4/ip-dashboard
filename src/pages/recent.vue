@@ -28,8 +28,13 @@ export default Vue.extend({
             display: true,
           },
         }],
+        yAxes: [{
+          scaleLabel: {
+            labelString: 'Relative loudness',
+            display: true,
+          },
+        }],
       },
-      yAxes: [{}],
     },
   }),
   computed: {
