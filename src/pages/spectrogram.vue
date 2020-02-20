@@ -9,6 +9,7 @@
 <script lang="ts">
 /* eslint-disable no-bitwise */
 import Vue from 'vue';
+import Vuex from 'vuex';
 
 function getRatioPoint(value: number): number {
   return value / 65535;
@@ -65,17 +66,23 @@ function prerenderColumn(colors: number[][]) {
 
 export default Vue.extend({
   async mounted() {
-    const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
-    const spectralData = await data.json();
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
     const context = canvas.getContext('2d') as CanvasRenderingContext2D;
     context.scale(10, 10); // TODO: these values are constant
     let counter = 0;
-    spectralData.reverse().forEach((point: {spectra: number[]}) => {
+    (await this.getMoreData()).reverse().forEach((point: {spectra: number[]}) => {
       const colors = genColumn(point.spectra, 0, 0xff0000);
       context.drawImage(prerenderColumn(colors), counter, 0);
       counter += 1;
     });
+  },
+  methods: {
+    async getMoreData(): Promise<[{spectra: number[]}]> {
+      const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
+      const spectralData = await data.json();
+      this.$store.commit('importNewData', spectralData);
+      return spectralData;
+    },
   },
 });
 </script>

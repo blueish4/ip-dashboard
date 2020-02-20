@@ -25,7 +25,7 @@ const store = new Vuex.Store({
   },
   mutations: {
     importNewData(state, record: any) {
-      state.records.push(record);
+      state.records = state.records.concat(record);
     },
   },
 });
@@ -36,6 +36,7 @@ const router = new VueRouter({
 });
 
 new Vue({
+  store,
   router,
   render: h => h(App),
 }).$mount('#app');
