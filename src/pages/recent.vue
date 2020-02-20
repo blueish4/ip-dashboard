@@ -38,12 +38,11 @@ export default Vue.extend({
     },
     chartData() {
       const history = this.$store.getters.lastEntries;
-      console.log(history);
       return {
         labels: ['63', '125', '250', '500', '1000', '2000', '4000', '8000'],
         datasets: [
           {
-            data: history[history.length - 1].spectra.map(e => e / 65535),
+            data: history[history.length - 1].spectra.map((e: number) => e / 65535),
             label: 'spectra',
           },
         ],
