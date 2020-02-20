@@ -73,6 +73,15 @@ export default Vue.extend({
       const spectralData = await data.json();
       this.$store.commit('importNewData', spectralData);
       this.loaded = true;
+      window.setInterval(async () => {
+        await this.fetchUpdate();
+        this.redraw();
+      }, 5000);
+    },
+    async fetchUpdate() {
+      const res = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
+      const json = await res.json();
+      this.$store.commit('importNewData', json);
     },
     resize() {
       const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -80,11 +89,12 @@ export default Vue.extend({
       this.redraw();
     },
     redraw() {
-      debugger;
       const canvas = document.getElementById('canvas') as HTMLCanvasElement;
       const context = canvas.getContext('2d') as CanvasRenderingContext2D;
+      context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
       const plottable = this.$store.getters.lastEntries;
 
+      context.save(); // save default drawing context
       context.scale(canvas.width / plottable.length, canvas.height / 8);
       let counter = 0;
       plottable.forEach((point: {spectra: number[]}) => {
@@ -92,6 +102,7 @@ export default Vue.extend({
         context.drawImage(prerenderColumn(colors), counter, 0);
         counter += 1;
       });
+      context.restore(); // restore default drawing context
     },
   },
 });
