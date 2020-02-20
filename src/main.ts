@@ -25,12 +25,17 @@ const store = new Vuex.Store({
   },
   getters: {
     lastEntries(state) {
-      return state.records.reverse();
+      return state.records;
     },
   },
   mutations: {
     importNewData(state, record: any) {
-      state.records = state.records.concat(record);
+      const docids = state.records.map(e => e.documentId);
+      record.reverse().forEach((element: any) => {
+        if (!(element.documentId in docids)) {
+          state.records.push(element);
+        }
+      });
     },
   },
 });
