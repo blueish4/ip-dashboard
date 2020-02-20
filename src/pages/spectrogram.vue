@@ -68,6 +68,11 @@ function prerenderColumn(colors: number[][]) {
   drawColumn(offscreenCtx, colors);
   return offscreenCanvas;
 }
+interface record {
+  dba:number,
+  majorPeak: number,
+  timestamp:{_seconds: number}
+}
 
 export default Vue.extend({
   components: {
@@ -76,19 +81,29 @@ export default Vue.extend({
   computed: {
     dbHistory() {
       const history = this.$store.getters.lastEntries;
-      const trimmed = history.map((e: {dba:number, timestamp:{_seconds: number}}) => {
+      const bundle = history.map((e: record) => {
         // eslint-disable-next-line no-underscore-dangle
         const timestamp = new Date(e.timestamp._seconds * 1000);
-        return {
+        return [{
           y: e.dba,
           x: timestamp,
-        };
+        }, {
+          y: e.majorPeak,
+          x: timestamp,
+        }];
       });
 
       return {
         datasets: [{
           label: 'dBA reading',
-          data: trimmed,
+          data: bundle.map((e:Object[]) => e[0]),
+          borderColor: '#ff0000',
+          backgroundColor: '#f00',
+          yAxisID: 'dba',
+        }, {
+          label: 'Peak Frequency',
+          data: bundle.map((e:Object[]) => e[1]),
+          yAxisID: 'peak',
         }],
       };
     },
@@ -128,6 +143,16 @@ export default Vue.extend({
             },
             ticks: {
               min: 30,
+            },
+            id: 'dba',
+            position: 'left',
+          }, {
+            id: 'peak',
+            type: 'linear',
+            position: 'right',
+            scaleLabel: {
+              labelString: 'Peak frequency',
+              display: true,
             },
           }],
         },
