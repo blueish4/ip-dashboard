@@ -1,9 +1,19 @@
 <template>
-  <div class="parent" @resize="resize" v-if="loaded">
+  <div class="parent" @resize="resize">
+    <div>
     <canvas id="canvas">
       <p>A canvas showing the previous history</p>
     </canvas>
     <p v-if="!loaded">Loading...</p>
+    </div>
+    <div>
+    <db-history-graph
+      class="graph"
+      v-if="loaded"
+      :chartData="this.dbHistory"
+      :options="options"
+    />
+    </div>
   </div>
 </template>
 
@@ -11,6 +21,7 @@
 /* eslint-disable no-bitwise */
 import Vue from 'vue';
 import Vuex from 'vuex';
+import dbHistoryGraph from '../components/dbHistoryGraph.vue';
 
 function genCell(value: number, lower: number, upper: number): number[] {
   const intensity = value / 65535;
@@ -59,31 +70,78 @@ function prerenderColumn(colors: number[][]) {
 }
 
 export default Vue.extend({
+  components: {
+    dbHistoryGraph,
+  },
+  computed: {
+    dbHistory() {
+      const history = this.$store.getters.lastEntries;
+      const trimmed = history.map((e: {dba:number, timestamp:{_seconds: number}}) => {
+        // eslint-disable-next-line no-underscore-dangle
+        const timestamp = new Date(e.timestamp._seconds * 1000);
+        return {
+          y: e.dba,
+          x: timestamp,
+        };
+      });
+
+      return {
+        datasets: [{
+          label: 'dBA reading',
+          data: trimmed,
+        }],
+      };
+    },
+    loaded() {
+      return this.$store.getters.lastEntries.length > 0;
+    },
+  },
   data() {
     return {
-      loaded: false,
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            type: 'time',
+            distribution: 'linear',
+            ticks: {
+              // maxRotation: 0,
+              sampleSize: 20,
+              source: 'auto',
+            },
+            time: {
+              stepSize: 20,
+              displayFormats: {
+                second: 'h:mm:ss',
+              },
+            },
+            scaleLabel: {
+              labelString: 'Time',
+              display: true,
+            },
+          }],
+        },
+        yAxes: [{
+          type: 'logarithmic',
+          scaleLabel: {
+            labelString: 'Loudness (dBA)',
+            display: true,
+          },
+        }],
+      },
     };
   },
   async mounted() {
-    await this.getMoreData();
-    this.resize();
+    if (this.$store.getters.lastEntries.length > 0) {
+      this.resize();
+    }
+    window.setInterval(() => {
+      if (this.$route.path === '/spectrogram') {
+        this.resize();
+      }
+    }, 5000);
   },
   methods: {
-    async getMoreData(): Promise<void> {
-      const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
-      const spectralData = await data.json();
-      this.$store.commit('importNewData', spectralData);
-      this.loaded = true;
-      window.setInterval(async () => {
-        await this.fetchUpdate();
-        this.redraw();
-      }, 5000);
-    },
-    async fetchUpdate() {
-      const res = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
-      const json = await res.json();
-      this.$store.commit('importNewData', json);
-    },
     resize() {
       const canvas = document.getElementById('canvas') as HTMLCanvasElement;
       canvas.width = (canvas.parentElement as HTMLElement).offsetWidth;
@@ -134,13 +192,3 @@ export default Vue.extend({
   },
 });
 </script>
-
-<style scoped>
-.parent {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  grid-column-gap: 0px;
-  grid-row-gap: 0px;
-}
-</style>

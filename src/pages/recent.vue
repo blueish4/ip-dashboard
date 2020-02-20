@@ -1,8 +1,7 @@
 <template>
-  <div>
+  <div v-if="loaded">
     <dbGraph
       class="graph"
-      v-if="loaded"
       :chartData="chartData"
       :options="options"
     />
@@ -20,31 +19,42 @@ export default Vue.extend({
     dbGraph,
   },
   data: () => ({
-    loaded: false,
-    chartData: {},
     options: {
       maintainAspectRatio: false,
+      scales: {
+        xAxes: [{
+          scaleLabel: {
+            labelString: 'Frequency (Hz)',
+            display: true,
+          },
+        }],
+      },
+      yAxes: [{}],
     },
-    date: new Date(),
   }),
-  async mounted() {
-    const res = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
-    const json = await res.json();
-
-    // eslint-disable-next-line dot-notation
-    const timestamp = json[0].timestamp['_seconds'] * 1000;
-    this.date = new Date(timestamp);
-
-    this.chartData = {
-      labels: ['63', '125', '250', '500', '1000', '2000', '4000', '8000'],
-      datasets: [
-        {
-          data: json[0].spectra,
-          label: 'spectra',
-        },
-      ],
-    };
-    this.loaded = true;
+  computed: {
+    loaded() {
+      return this.$store.getters.lastEntries.length > 0;
+    },
+    chartData() {
+      const history = this.$store.getters.lastEntries;
+      console.log(history);
+      return {
+        labels: ['63', '125', '250', '500', '1000', '2000', '4000', '8000'],
+        datasets: [
+          {
+            data: history[history.length - 1].spectra.map(e => e / 65535),
+            label: 'spectra',
+          },
+        ],
+      };
+    },
+    date() {
+      const history = this.$store.getters.lastEntries;
+      // eslint-disable-next-line dot-notation
+      const timestamp = history[history.length - 1].timestamp['_seconds'] * 1000;
+      return new Date(timestamp);
+    },
   },
 });
 </script>
