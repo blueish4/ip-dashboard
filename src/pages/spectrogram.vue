@@ -66,13 +66,17 @@ function prerenderColumn(colors: number[][]) {
 
 export default Vue.extend({
   async mounted() {
-    const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-latest-frequencies');
+    const data = await fetch('https://europe-west1-individual-project-265621.cloudfunctions.net/get-history');
     const spectralData = await data.json();
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
     const context = canvas.getContext('2d') as CanvasRenderingContext2D;
     context.scale(10, 10); // TODO: these values are constant
-    const colors = genColumn(spectralData.spectra, 0, 0xff0000);
-    context.drawImage(prerenderColumn(colors), 0, 0);
+    let counter = 0;
+    spectralData.reverse().forEach((point) => {
+      const colors = genColumn(point.spectra, 0, 0xff0000);
+      context.drawImage(prerenderColumn(colors), counter, 0);
+      counter += 1;
+    });
   },
 });
 </script>
