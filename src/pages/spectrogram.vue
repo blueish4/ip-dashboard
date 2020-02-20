@@ -34,7 +34,6 @@ function genCell(value: number, lower: number, upper: number): number[] {
 }
 
 function genColumn(values: number[], lower: number, upper: number): number[][] {
-  console.log(values);
   const colors: number[][] = [];
   values.forEach((e) => {
     colors.push(genCell(e, lower, upper));
@@ -72,7 +71,7 @@ export default Vue.extend({
     const context = canvas.getContext('2d') as CanvasRenderingContext2D;
     context.scale(10, 10); // TODO: these values are constant
     let counter = 0;
-    spectralData.reverse().forEach((point) => {
+    spectralData.reverse().forEach((point: {spectra: number[]}) => {
       const colors = genColumn(point.spectra, 0, 0xff0000);
       context.drawImage(prerenderColumn(colors), counter, 0);
       counter += 1;

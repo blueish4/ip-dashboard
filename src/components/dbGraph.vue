@@ -17,7 +17,7 @@ export default Vue.extend({
   },
   mounted() {
     // Overwriting base render method with actual data.
-    this.renderChart(this.chartData, this.options);
+    (this as any).renderChart(this.chartData, this.options);
   },
 });
 </script>
