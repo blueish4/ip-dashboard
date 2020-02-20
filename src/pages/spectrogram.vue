@@ -3,6 +3,7 @@
     <canvas id="canvas">
       <p>A canvas showing the previous history</p>
     </canvas>
+    <p v-if="!loaded">Loading...</p>
   </div>
 </template>
 
@@ -103,6 +104,32 @@ export default Vue.extend({
         counter += 1;
       });
       context.restore(); // restore default drawing context
+      context.save();
+      context.fillStyle = '#e9f409';
+      context.strokeStyle = '#e9f409';
+      context.fillText('8000Hz', 100, 12);
+      context.fillText('63Hz', 100, canvas.height - 2);
+
+      // eslint-disable-next-line dot-notation
+      const latestDate = new Date(plottable[plottable.length - 1].timestamp['_seconds'] * 1000);
+      // eslint-disable-next-line dot-notation
+      const oldestDate = new Date(plottable[0].timestamp['_seconds'] * 1000);
+      const timeLocaleOptions:Intl.DateTimeFormatOptions = {
+        hour: 'numeric',
+        minute: 'numeric',
+        second: '2-digit',
+      };
+      const dateLocaleOptions: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'numeric',
+        year: '2-digit',
+      };
+      context.fillText(latestDate.toLocaleTimeString('en-GB', timeLocaleOptions), canvas.width - 50, canvas.height - 12);
+      context.fillText(latestDate.toLocaleDateString('en-GB', dateLocaleOptions), canvas.width - 50, canvas.height - 2);
+      context.fillText(oldestDate.toLocaleTimeString('en-GB', timeLocaleOptions), 0, canvas.height - 12);
+      context.fillText(oldestDate.toLocaleDateString('en-GB', dateLocaleOptions), 0, canvas.height - 2);
+
+      context.restore();
     },
   },
 });
