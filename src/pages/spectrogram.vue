@@ -23,26 +23,19 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import dbHistoryGraph from '../components/dbHistoryGraph.vue';
 
-function genCell(value: number, lower: number, upper: number): number[] {
-  const intensity = value / 65535;
-
+function genCell(value: number): number[] {
+  const intensity = Math.floor(value * 255 / 65535);
   const channels = [];
-  for (let channel = 2; channel >= 0; channel -= 1) {
-    const chanSelect = 8 * channel; // 8 bits per channel
-    const mask = 0xff << chanSelect;
-    const range = (upper & mask) - (lower & mask);
-
-    const chanValue = ((range >> chanSelect) * value * intensity) & 0xff;
-    channels.push(chanValue);
-  }
-  channels.push(255); // full alpha channel
+  channels.push(intensity);
+  channels.push(0, 0, 255); // full alpha channel
+  console.log(channels);
   return channels;
 }
 
-function genColumn(values: number[], lower: number, upper: number): number[][] {
+function genColumn(values: number[]): number[][] {
   const colors: number[][] = [];
   values.forEach((e) => {
-    colors.push(genCell(e, lower, upper));
+    colors.push(genCell(e));
   });
   return colors;
 }
@@ -71,6 +64,7 @@ function prerenderColumn(colors: number[][]) {
 interface record {
   dba:number,
   majorPeak: number,
+  spectra: number[],
   timestamp:{_seconds: number}
 }
 
@@ -184,8 +178,12 @@ export default Vue.extend({
       context.save(); // save default drawing context
       context.scale(canvas.width / plottable.length, canvas.height / 8);
       let counter = 0;
-      plottable.forEach((point: {spectra: number[]}) => {
-        const colors = genColumn(point.spectra, 0, 0xff0000);
+      plottable.forEach((point: record) => {
+        const colors = genColumn(point.spectra);
+        // eslint-disable-next-line no-underscore-dangle
+        console.log(new Date(point.timestamp._seconds * 1000));
+        console.log(point.spectra.map(e => e / 65535));
+        console.log(colors.map(e => e[0] / 255));
         context.drawImage(prerenderColumn(colors), counter, 0);
         counter += 1;
       });
