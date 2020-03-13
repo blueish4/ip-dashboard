@@ -28,7 +28,6 @@ function genCell(value: number): number[] {
   const channels = [];
   channels.push(intensity);
   channels.push(0, 0, 255); // full alpha channel
-  console.log(channels);
   return channels;
 }
 
@@ -180,10 +179,6 @@ export default Vue.extend({
       let counter = 0;
       plottable.forEach((point: record) => {
         const colors = genColumn(point.spectra);
-        // eslint-disable-next-line no-underscore-dangle
-        console.log(new Date(point.timestamp._seconds * 1000));
-        console.log(point.spectra.map(e => e / 65535));
-        console.log(colors.map(e => e[0] / 255));
         context.drawImage(prerenderColumn(colors), counter, 0);
         counter += 1;
       });
